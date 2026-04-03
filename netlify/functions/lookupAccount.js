@@ -1,24 +1,37 @@
 const fetch = require("node-fetch");
 
 exports.handler = async (event, context) => {
+  // CORS preflight support
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      },
+      body: ""
+    };
+  }
+
   try {
-    // Parse the email from the request body
     const body = JSON.parse(event.body || "{}");
     const email = (body.email || "").trim().toLowerCase();
 
     if (!email) {
       return {
         statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*"
+        },
         body: JSON.stringify({ error: "Email is required" })
       };
     }
 
-    // Airtable API details
     const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
     const BASE_ID = process.env.AIRTABLE_BASE_ID;
-    const TABLE_NAME = "Accounts"; // change if your table name differs
+    const TABLE_NAME = "Accounts"; // change if needed
 
-    // Query Airtable for the matching account
     const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}?filterByFormula=${encodeURIComponent(
       `{Email Normalized} = '${email}'`
     )}`;
@@ -34,6 +47,9 @@ exports.handler = async (event, context) => {
     if (!data.records || data.records.length === 0) {
       return {
         statusCode: 404,
+        headers: {
+          "Access-Control-Allow-Origin": "*"
+        },
         body: JSON.stringify({ error: "No account found for this email" })
       };
     }
@@ -42,6 +58,9 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*"
+      },
       body: JSON.stringify({
         success: true,
         accountId: account.id,
@@ -53,6 +72,9 @@ exports.handler = async (event, context) => {
     console.error("lookupAccount error:", err);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*"
+      },
       body: JSON.stringify({ error: "Server error", details: err.message })
     };
   }
