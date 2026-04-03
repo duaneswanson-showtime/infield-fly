@@ -26,12 +26,48 @@ exports.handler = async (event, context) => {
 
     const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
     const BASE_ID = process.env.AIRTABLE_BASE_ID;
-    const TABLE_NAME = "Accounts"; // change if your table name differs
+    const TABLE_NAME = "Accounts"; // change if needed
 
-    // Airtable API URL with filterByFormula
+    const formula = `{Email Normalized} = '${email}'`;
+
     const url =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
-      `?filterByFormula=${encodeURIComponent(`{Email Normalized} = '${email}'`)}`;
+      `?filterByFormula=${encodeURIComponent(formula)}`;
 
     const response = await fetch(url, {
-      headers
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_TOKEN}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!data.records || data.records.length === 0) {
+      return {
+        statusCode: 404,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: "No account found for this email" })
+      };
+    }
+
+    const account = data.records[0];
+
+    return {
+      statusCode: 200,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({
+        success: true,
+        accountId: account.id,
+        fields: account.fields
+      })
+    };
+
+  } catch (err) {
+    console.error("lookupAccount error:", err);
+    return {
+      statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ error: "Server error", details: err.message })
+    };
+  }
+};
