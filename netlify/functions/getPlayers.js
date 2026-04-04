@@ -1,5 +1,4 @@
 exports.handler = async (event, context) => {
-  // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -26,10 +25,10 @@ exports.handler = async (event, context) => {
 
     const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
     const BASE_ID = process.env.AIRTABLE_BASE_ID;
-    const TABLE_NAME = "Player Profiles"; // adjust if needed
+    const TABLE_NAME = "Player Profiles";
 
-    // Filter: find all players whose linked Accounts field contains this accountId
-    const formula = `FIND('${accountId}', ARRAYJOIN({Accounts}))`;
+    // Correct formula for linked-record filtering
+    const formula = `{Accounts} = '${accountId}'`;
 
     const url =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}` +
